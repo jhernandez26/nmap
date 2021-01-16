@@ -1,0 +1,7 @@
+---
+# defaults file for Evidencias
+dir_dest:  var/jenkins_home/ansible/Evidencia_DIS/reports/
+ssh_user_cdccontaprod: Clouderags_084549u
+ssh_user_saspldprod: pablo31.
+ssh_user_opereke: Oper4ci0n3s
+ssh_user_jhernandez: pablo31.

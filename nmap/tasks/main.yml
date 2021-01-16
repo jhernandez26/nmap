@@ -1,0 +1,83 @@
+---
+# tasks file for Evidencias
+- name: Obtener evidencias de IEECO
+  block:
+  - debug:
+      msg: "Generación de evidencia para DSI en IEECO"
+  
+  - set_fact: fecha="{{lookup('pipe','date +%Y%m%d%H%M%S') }}"
+
+  - name: Limpieza de reportes de CIS
+    command: sudo /admscripts/scripts/cis-clean
+    #command: /admscripts/scripts/cis-clean
+    #become: yes
+    #become_method: su
+    #become_user: root
+    #become_exe: 'sudo su -'
+    #become_exe: '/admscripts/scripts/cis-clean'
+    tags:
+    - cis-clean
+  - debug:
+      msg: "Limpiando reporte"
+
+  - name: Generar reporte de CIS
+    environment: 
+        TMOUT: 3000000000
+    shell: sudo /admscripts/scripts/cis-run
+    ignore_unreachable: yes
+    tags:
+    - cis-run
+  - debug:
+      msg: "Creando reporte"
+
+
+  - name: Archvivos de servicios y red
+    shell:
+      cmd: sudo /admscripts/scripts/dsi-files && sudo chown -R root:sysadmins /admscripts/cis/Assessor-CLI/reports 
+    tags:
+    - dsi-files
+  - debug:
+      msg: "Creando reporte de demonios y red"
+
+
+  - name: Crea directorio local
+    local_action:
+      module: file
+      path: /tmp/CIS-REPORT-{{ fecha }}
+      state: directory
+      mode: 0755
+      
+    tags:
+    - local_directory
+  - debug:
+      msg: "Creando directorio local"
+
+
+  - name: Comprimir archivos 
+    archive: 
+       path: /admscripts/cis/Assessor-CLI/reports/*
+       dest: /tmp/{{ ansible_fqdn }}.gzip
+    tags:
+    - zip
+  - debug:
+      msg: "Comprimiendo evidencia"
+
+  - name: Obtener evidencia 
+    fetch:
+      flat: yes
+      src: /tmp/{{ ansible_fqdn }}.gzip
+      dest: /{{ dir_dest }}CIS-REPORT-{{ fecha }}/
+    tags:
+    - local_directory
+  - debug:
+      msg: "Copiando archivos a /{{ dir_dest }}CIS-REPORT-{{ fecha }}"
+
+  - name: Eliminando evidencia en servidor remoto 
+    file:
+      path: /tmp/{{ ansible_hostname }}.gzip
+      state: absent
+    tags:
+    - delete_remote
+  - debug:
+      msg: "Eliminando evidencia en servidor remoto"
+

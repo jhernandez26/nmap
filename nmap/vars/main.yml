@@ -1,2 +1,5 @@
 ---
-# vars file for Evidencias
+# vars file for nmap
+remote_path: home/jhernandez/tmp/
+local_path: tmp/
+

@@ -1,83 +1,74 @@
 ---
-# tasks file for Evidencias
-- name: Obtener evidencias de IEECO
+# tasks file for nmap
+- name: nmap for get port information 
   block:
   - debug:
-      msg: "Generación de evidencia para DSI en IEECO"
+      msg: "Generación de reporte con el estado de los puertos"
   
   - set_fact: fecha="{{lookup('pipe','date +%Y%m%d%H%M%S') }}"
 
-  - name: Limpieza de reportes de CIS
-    command: sudo /admscripts/scripts/cis-clean
-    #command: /admscripts/scripts/cis-clean
-    #become: yes
-    #become_method: su
-    #become_user: root
-    #become_exe: 'sudo su -'
-    #become_exe: '/admscripts/scripts/cis-clean'
+  - name: Copy_puertos.csv
+    copy: 
+      src: nmap/files/puertos.csv
+      dest: /tmp
+      mode: 444
     tags:
-    - cis-clean
+    - copy-puertos.csv
   - debug:
-      msg: "Limpiando reporte"
+      msg: "Copiando el archivo puertos.csv"
 
-  - name: Generar reporte de CIS
-    environment: 
-        TMOUT: 3000000000
-    shell: sudo /admscripts/scripts/cis-run
-    ignore_unreachable: yes
+  - name: check port
+    script: nmap/files/ports.sh /tmp/puertos.csv {{ fecha  }}
+    args:
+       chdir: /home/jhernandez/tmp/
     tags:
-    - cis-run
+    - check_port
   - debug:
       msg: "Creando reporte"
-
-
-  - name: Archvivos de servicios y red
-    shell:
-      cmd: sudo /admscripts/scripts/dsi-files && sudo chown -R root:sysadmins /admscripts/cis/Assessor-CLI/reports 
-    tags:
-    - dsi-files
-  - debug:
-      msg: "Creando reporte de demonios y red"
-
 
   - name: Crea directorio local
     local_action:
       module: file
-      path: /tmp/CIS-REPORT-{{ fecha }}
+      path: /tmp/nmap-{{ fecha }}
       state: directory
       mode: 0755
-      
     tags:
     - local_directory
   - debug:
       msg: "Creando directorio local"
 
-
-  - name: Comprimir archivos 
-    archive: 
-       path: /admscripts/cis/Assessor-CLI/reports/*
-       dest: /tmp/{{ ansible_fqdn }}.gzip
-    tags:
-    - zip
-  - debug:
-      msg: "Comprimiendo evidencia"
-
   - name: Obtener evidencia 
     fetch:
       flat: yes
-      src: /tmp/{{ ansible_fqdn }}.gzip
-      dest: /{{ dir_dest }}CIS-REPORT-{{ fecha }}/
+      src: /home/jhernandez/tmp/{{ ansible_fqdn }}_scan_{{ fecha }}.csv
+      dest: /tmp/nmap-{{ fecha }}/
     tags:
     - local_directory
   - debug:
-      msg: "Copiando archivos a /{{ dir_dest }}CIS-REPORT-{{ fecha }}"
+      msg: "Copiando archivos a /tmp/nmap-{{ fecha }}"
 
   - name: Eliminando evidencia en servidor remoto 
     file:
-      path: /tmp/{{ ansible_hostname }}.gzip
+      path: /home/jhernandez/tmp/{{ ansible_fqdn }}_scan_{{ fecha }}.csv
       state: absent
     tags:
     - delete_remote
   - debug:
       msg: "Eliminando evidencia en servidor remoto"
 
+  - name: Eliminando archivo de puertos.csv
+    file:
+      path: /tmp/puertos.csv
+      state: absent
+    tags:
+    - delete_remote
+  - debug:
+      msg: "Eliminando evidencia en servidor remoto"
+
+  - name: Crea_reporte_conjunto
+    local_action:
+      module: shell echo "Origen,Destination,Port,Protocol,Service,State" >/tmp/nmap-{{ fecha }}/all.csv && cat /tmp/nmap-{{ fecha }}/*csv  | grep -v "Origen" >> /tmp/nmap-{{ fecha }}/all.csv
+    tags:
+    - full_report
+  - debug:
+      msg: "Creando reporte global"

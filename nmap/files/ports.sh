@@ -10,7 +10,7 @@ nmapscan(){
 }
 document(){
   origen=$(hostname)
-  file=$(hostname)_scan_$(date +%Y%m%d%H%M%S).csv
+  file=$(hostname)_scan_$1.csv
   echo "Origen,Destination,Port,Protocol,Service,State">$file
   while read line;do
 	  if [ $(echo $line | grep -c 'report for') != 0 ];then
@@ -28,6 +28,6 @@ document(){
 }
 main(){
   nmapscan $1 
-  document
+  document $2
 }
-main $1
+main $1 $2

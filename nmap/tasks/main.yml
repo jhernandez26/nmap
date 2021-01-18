@@ -5,10 +5,33 @@
   - debug:
       msg: "Generación de reporte con el estado de los puertos"
   
-  - set_fact: fecha="{{lookup('pipe','date +%Y%m%d%H%M%S') }}"
+
+  - name: Hora local
+    #local_action: set_fact  fecha="{{lookup('pipe','date +%Y%m%d%H%M%S') }}"
+    set_fact: 
+       fecha: "{{lookup('pipe','date +%Y%m%d%H%M%S') }}"
+       cacheable: yes
+    run_once: True
+    delegate_to: 127.0.0.1
+    #delegate_facts: True
+  - debug:
+      msg: "Se obtiene el tiempo {{ fecha }}"
   
   #- name: Include vars
   #  include_vars: nmap/vars/main.yml 
+
+  - name: Crea directorio local
+    #local_action:
+    #module: file
+    file:
+      path: /{{ local_path }}nmap-{{ fecha }}
+      state: directory
+      mode: 0755
+    delegate_to: 127.0.0.1
+    tags:
+    - local_directory
+  - debug:
+      msg: "Creando directorio local /{{ local_path }}nmap-{{ fecha }}"
 
   - name: Copy_puertos.csv
     copy: 
@@ -29,16 +52,6 @@
   - debug:
       msg: "Creando reporte en /{{ remote_path }}"
 
-  - name: Crea directorio local
-    local_action:
-      module: file
-      path: /{{ local_path }}nmap-{{ fecha }}
-      state: directory
-      mode: 0755
-    tags:
-    - local_directory
-  - debug:
-      msg: "Creando directorio local"
 
   - name: Obtener evidencia 
     fetch:
@@ -70,7 +83,7 @@
 
   - name: Crea_reporte_conjunto
     local_action:
-      module: shell echo "Origen,Destination,Port,Protocol,Service,State" >/{{ local_path }}nmap-{{ fecha }}/all.csv && cat /{{ local_path }}nmap-{{ fecha }}/*csv  | grep -v "Origen" >> /{{ local_path }}nmap-{{ fecha }}/all.csv
+      module: shell echo "Origen,Destination,Port,Protocol,Service,State" >/{{ local_path }}nmap-{{ fecha }}/all.csv && cat /{{ local_path }}nmap-{{ fecha }}/*csv  | grep -v "Origen" >> /{{ local_path }}nmap-{{ fecha }}/all.csv && chmod 777 /{{ local_path }}nmap-{{ fecha }}/*csv 
     tags:
     - full_report
   - debug:

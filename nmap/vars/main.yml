@@ -1,5 +1,5 @@
 ---
 # vars file for nmap
-remote_path: home/jhernandez/tmp/
+remote_path: home/u945480/
 local_path: tmp/
 

@@ -82,8 +82,7 @@
       msg: "Eliminando evidencia en servidor remoto"
 
   - name: Crea_reporte_conjunto
-    local_action:
-      module: shell echo "Origen,Destination,Port,Protocol,Service,State" >/{{ local_path }}nmap-{{ fecha }}/all.csv && cat /{{ local_path }}nmap-{{ fecha }}/*csv  | grep -v "Origen" >> /{{ local_path }}nmap-{{ fecha }}/all.csv && chmod 777 /{{ local_path }}nmap-{{ fecha }}/*csv 
+    local_action: shell echo "Origen,Destination,Port,Protocol,Service,State" >/{{ local_path }}nmap-{{ fecha }}/all.csv && cat /{{ local_path }}nmap-{{ fecha }}/*csv  | grep -v "Origen" >> /{{ local_path }}nmap-{{ fecha }}/all.csv && chmod 777 /{{ local_path }}nmap-{{ fecha }}/*csv 
     tags:
     - full_report
   - debug:
